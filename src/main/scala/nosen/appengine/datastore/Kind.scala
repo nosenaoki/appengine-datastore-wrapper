@@ -48,7 +48,6 @@ trait Kind {
     override def cast(value:Any):Int = value.asInstanceOf[Long].toInt
   }
 
-
   case class KeyWrapper(key:Key) 
 
   object KeyWrapper {
@@ -98,7 +97,10 @@ trait Kind {
 
   class Descendant[K <: Kind](val descendantKind:K) {
     type DescQuery = descendantKind.QueryWrapper
+    type DescWrapper = descendantKind.Wrapper
     def get(entity:Entity):DescQuery = descendantKind.childrenOf(entity.getKey)
+    def create(parent:Entity): DescWrapper = descendantKind.newChild(parent)
+
     protected def buildQuery(query:DescQuery): DescQuery = query
   }
 
@@ -115,7 +117,7 @@ trait Kind {
 
   def create:Wrapper = newInstance(new Entity(kindName))
   protected def newInstance(keyname:String):Wrapper = newInstance(new Entity(kindName, keyname))
-  protected def newInstance(parent:EntityWrapper[_]):Wrapper = newInstance(new Entity(kindName, parent.entity.getKey))
+  protected def newChild(parent:Entity):Wrapper = newInstance(new Entity(kindName, parent.getKey))
   private[datastore] def newInstance(entity:Entity):Wrapper = new Wrapper(entity, this)
 
 }

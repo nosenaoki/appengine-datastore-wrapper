@@ -32,11 +32,14 @@ class EntityWrapper[A <: Kind](val entity:Entity, val kind:A) {
   
   def apply[K <: Kind](desc:kind.Descendant[K]):desc.descendantKind.QueryWrapper = desc.get(entity)
 
+  def +[K <: Kind](desc:kind.Descendant[K]):desc.descendantKind.Wrapper = desc.create(entity)
+
   def get[V](pdef:kind.Property[V]):Option[V] = {
     val v = entity.getProperty(pdef.name)
     if(v == null) None
     else Some(pdef.cast(v))
   }
+
 
   def save {
     val ds = datastore

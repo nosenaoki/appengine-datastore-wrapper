@@ -1,19 +1,25 @@
 package nosen.appengine.datastore
 
 import org.specs._
-
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 
 class KindSpec extends Specification { 
   val helper =
     new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
-object User extends Kind { type User = Wrapper
-    val parent = None
+
+  object User extends Kind { 
+    type User = Wrapper
+
     object firstName extends StringProperty
     object lastName extends StringProperty
     object age extends IntProperty
-    
+    object orders extends Descendant(Order)
+  }
+
+  object Order extends Kind {
+    object itemName extends StringProperty
+    object user extends Parent(User)
   }
 
   "A kind" can {
@@ -44,9 +50,7 @@ object User extends Kind { type User = Wrapper
     }
 
     "filter,sort resulting collection" in {
-
       User.select.map(_.delete)
-
       val u1 = User.create
 
       import User._
@@ -55,7 +59,6 @@ object User extends Kind { type User = Wrapper
         firstName -> "Naoki",
         lastName -> "NOSE",
         age -> 34)
-     
       u1.save
 
       val u2 = User.create
@@ -67,7 +70,6 @@ object User extends Kind { type User = Wrapper
      
       u2.save
 
-
       select.where(age === 34).size must beEqualTo(1)
       select.where(age === 34).head(firstName) must beEqualTo("Naoki")
       
@@ -77,11 +79,17 @@ object User extends Kind { type User = Wrapper
       res.head(age) must beEqualTo(35)
 
     }
+
+//    "define relation ship between child and parent " in {
+//      User.select.map(_.delete)
+//      val u1 = User.create
+//
+//    }
+
     doLast {
       helper.tearDown
     }
 
   }
-
 
 }
