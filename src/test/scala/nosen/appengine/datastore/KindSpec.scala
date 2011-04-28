@@ -80,11 +80,35 @@ class KindSpec extends Specification {
 
     }
 
-//    "define relation ship between child and parent " in {
-//      User.select.map(_.delete)
-//      val u1 = User.create
-//
-//    }
+    "define relation ship between child and parent " in {
+      User.select.foreach(_.delete)
+      Order.select.foreach(_.delete)
+
+      val u1 = {
+	import User._
+	create.bind (
+          firstName -> "Naoki",
+          lastName -> "NOSE",
+          age -> 34)
+      }
+
+      u1.save
+
+      val o1 = {
+	import Order._
+	val o:EntityWrapper[Order.type] = User.orders.create(u1)
+	o.bind(
+	  itemName -> "Programming in scala",
+	  user -> u1)
+      }
+      o1.save
+
+      val ods = {
+	import User._
+	u1(orders)
+      }
+      ods.size must beEqualTo(1)
+    }
 
     doLast {
       helper.tearDown

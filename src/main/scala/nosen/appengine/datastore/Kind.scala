@@ -96,10 +96,11 @@ trait Kind {
   }
 
   class Descendant[K <: Kind](val descendantKind:K) {
-    type DescQuery = descendantKind.QueryWrapper
-    type DescWrapper = descendantKind.Wrapper
+    type DescQuery = K#QueryWrapper
+    type DescWrapper = K#Wrapper
     def get(entity:Entity):DescQuery = descendantKind.childrenOf(entity.getKey)
-    def create(parent:Entity): DescWrapper = descendantKind.newChild(parent)
+    def create(parent:Wrapper): DescWrapper = 
+      descendantKind.newInstanceAsChild(parent.entity)
 
     protected def buildQuery(query:DescQuery): DescQuery = query
   }
@@ -116,8 +117,11 @@ trait Kind {
   private[datastore] def childrenOf(ancestor:Key) = QueryWrapper(Some(ancestor))
 
   def create:Wrapper = newInstance(new Entity(kindName))
-  protected def newInstance(keyname:String):Wrapper = newInstance(new Entity(kindName, keyname))
-  protected def newChild(parent:Entity):Wrapper = newInstance(new Entity(kindName, parent.getKey))
+
+  protected def newInstance(keyname:String):Wrapper = 
+    newInstance(new Entity(kindName, keyname))
+  protected def newInstanceAsChild(parent:Entity):Wrapper = 
+    newInstance(new Entity(kindName, parent.getKey))
   private[datastore] def newInstance(entity:Entity):Wrapper = new Wrapper(entity, this)
 
 }

@@ -10,12 +10,13 @@ class EntityWrapper[A <: Kind](val entity:Entity, val kind:A) {
 
   private def datastore = DatastoreServiceFactory.getDatastoreService
 
-  type PropertyEntry[V] = (kind.Property[V], V)
+  type PropertyEntry[V] = (A#Property[V], V)
 
-  def bind(props:PropertyEntry[_]*) {
+  def bind(props:PropertyEntry[_]*):this.type = {
     props.foreach {
       case (pdef, value) => entity.setProperty(pdef.name, value)
     }
+    this
   }
 
   def update[V](pdef:kind.Property[V], value:V) { 
@@ -28,11 +29,11 @@ class EntityWrapper[A <: Kind](val entity:Entity, val kind:A) {
     else pdef.cast(v)
   }
 
-  def apply[K <: Kind](parent:kind.Parent[K]):parent.parentKind.Wrapper = parent.get(entity)
+  def apply[K <: Kind](parent:kind.Parent[K]):parent.parentKind.Wrapper = 
+    parent.get(entity)
   
-  def apply[K <: Kind](desc:kind.Descendant[K]):desc.descendantKind.QueryWrapper = desc.get(entity)
-
-  def +[K <: Kind](desc:kind.Descendant[K]):desc.descendantKind.Wrapper = desc.create(entity)
+  def apply[K <: Kind](desc:kind.Descendant[K]):K#QueryWrapper = 
+    desc.get(entity)
 
   def get[V](pdef:kind.Property[V]):Option[V] = {
     val v = entity.getProperty(pdef.name)
