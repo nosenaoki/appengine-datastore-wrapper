@@ -17,14 +17,24 @@ trait Kind {
   def datastore = DatastoreServiceFactory.getDatastoreService
 
   type Wrapper = EntityWrapper[this.type]
+  type Member[A] = PartialFunction[Wrapper, A]
 
   case class Filter[A](prop:Kind.this.Property[A], value:A ,op:Query.FilterOperator) 
   case class Sort(prop:Kind.this.Property[_], direction:Query.SortDirection = Query.SortDirection.ASCENDING)
 
-  trait Property[A] {
+  trait Property[A] extends Member[A] {
     val name = this.getClass.getSimpleName.split("\\$").last
     def cast(value:Any):A = value.asInstanceOf[A]
 
+    def apply(w:Wrapper) = {
+      val v = w.entity.getProperty(name)
+      if(v == null) throw new NoSuchPropertyException(kindName, name)
+      else cast(v)
+    }
+
+    def isDefinedAt(w:Wrapper) = w.entity.hasProperty(name)
+
+    //Filters
     def ===(other:A):Kind.this.Filter[A] = Filter(this, other, Query.FilterOperator.EQUAL)
     def !==(other:A):Kind.this.Filter[A] = Filter(this, other, Query.FilterOperator.NOT_EQUAL)
     def <=(other:A):Kind.this.Filter[A] = Filter(this, other, Query.FilterOperator.LESS_THAN_OR_EQUAL)
@@ -48,6 +58,10 @@ trait Kind {
     override def cast(value:Any):Int = value.asInstanceOf[Long].toInt
   }
 
+  class KeyProperty extends Property[Kind#Wrapper] {
+    
+  }
+
   case class KeyWrapper(key:Key) 
 
   object KeyWrapper {
@@ -56,7 +70,8 @@ trait Kind {
 
     implicit def wrapName(name:String):Kind.this.KeyWrapper = 
       new KeyWrapper(KeyFactory.createKey(kindName, name))
-
+    implicit def wrapKey(key:Key):Kind.this.KeyWrapper = 
+      new KeyWrapper(key)
   }
 
   case class QueryWrapper(ancestor:Option[Key] = None,
@@ -90,19 +105,19 @@ trait Kind {
     def offset(i:Int) = copy(offsetOpt = Some(i))
   }
 
-  class Parent[K <: Kind](val parentKind:K) {
-    type PWrapper = parentKind.Wrapper
-    def get(entity:Entity):PWrapper = parentKind.newInstance(datastore.get(entity.getParent))
+  case class Descendant[A <:Kind#Wrapper](wrapper:A) {
+    def findAll = childrenOf(wrapper.key)
+    def create = newInstanceAsChild(wrapper.key)
   }
 
-  class Descendant[K <: Kind](val descendantKind:K) {
-    type DescQuery = K#QueryWrapper
-    type DescWrapper = K#Wrapper
-    def get(entity:Entity):DescQuery = descendantKind.childrenOf(entity.getKey)
-    def create(parent:Wrapper): DescWrapper = 
-      descendantKind.newInstanceAsChild(parent.entity)
+  trait DescendantOf[A <: Kind#Wrapper] extends PartialFunction[A, Descendant[A]] {
+    def apply(wrapper:A) = Descendant(wrapper)
+    def isDefinedAt(wrapper:A) = true
+  }
 
-    protected def buildQuery(query:DescQuery): DescQuery = query
+  trait AncestorOf[A <: Kind#Wrapper] extends PartialFunction[A, Option[Wrapper]] {
+    def apply(descendant:A) = findByKey(descendant.key.getParent)
+    def isDefinedAt(descendant:A) = true
   }
 
   def findByKey(key:this.KeyWrapper):Option[Wrapper] = 
@@ -112,16 +127,16 @@ trait Kind {
       case e:EntityNotFoundException => None
     }
 
-  val select = QueryWrapper()
+  val findAll = QueryWrapper()
 
-  private[datastore] def childrenOf(ancestor:Key) = QueryWrapper(Some(ancestor))
+  def childrenOf(ancestor:Key) = QueryWrapper(Some(ancestor))
 
   def create:Wrapper = newInstance(new Entity(kindName))
 
   protected def newInstance(keyname:String):Wrapper = 
     newInstance(new Entity(kindName, keyname))
-  protected def newInstanceAsChild(parent:Entity):Wrapper = 
-    newInstance(new Entity(kindName, parent.getKey))
+  protected def newInstanceAsChild(parent:Key):Wrapper = 
+    newInstance(new Entity(kindName, parent))
   private[datastore] def newInstance(entity:Entity):Wrapper = new Wrapper(entity, this)
 
 }

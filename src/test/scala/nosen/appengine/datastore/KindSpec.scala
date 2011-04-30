@@ -8,25 +8,25 @@ class KindSpec extends Specification {
   val helper =
     new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
 
-  object User extends Kind { 
+  object User extends Kind {
     type User = Wrapper
-
     object firstName extends StringProperty
     object lastName extends StringProperty
     object age extends IntProperty
-    object orders extends Descendant(Order)
+
+    object orders extends Order.DescendantOf[User]
   }
 
   object Order extends Kind {
+    type Order = Wrapper
     object itemName extends StringProperty
-    object user extends Parent(User)
+    object user extends User.AncestorOf[Order]
   }
 
   "A kind" can {
     doFirst {
       helper.setUp
     }
-
 
     "create ,save ,get, remove an entity" in {
       val u1 = User.create
@@ -50,7 +50,7 @@ class KindSpec extends Specification {
     }
 
     "filter,sort resulting collection" in {
-      User.select.map(_.delete)
+      User.findAll.map(_.delete)
       val u1 = User.create
 
       import User._
@@ -70,19 +70,18 @@ class KindSpec extends Specification {
      
       u2.save
 
-      select.where(age === 34).size must beEqualTo(1)
-      select.where(age === 34).head(firstName) must beEqualTo("Naoki")
-      
+      findAll.where(age === 34).size must beEqualTo(1)
+      findAll.where(age === 34).head(firstName) must beEqualTo("Naoki")
 
-      val res = select where (age > 33) orderBy (age desc, firstName)
+      val res = findAll where (age > 33) orderBy (age desc, firstName)
       res.size must beEqualTo(2)
       res.head(age) must beEqualTo(35)
 
     }
 
     "define relation ship between child and parent " in {
-      User.select.foreach(_.delete)
-      Order.select.foreach(_.delete)
+      User.findAll.foreach(_.delete)
+      Order.findAll.foreach(_.delete)
 
       val u1 = {
 	import User._
@@ -96,18 +95,18 @@ class KindSpec extends Specification {
 
       val o1 = {
 	import Order._
-	val o:EntityWrapper[Order.type] = User.orders.create(u1)
-	o.bind(
-	  itemName -> "Programming in scala",
-	  user -> u1)
+	import User.orders
+	u1(orders).create
+	  .bind(itemName -> "Programming in scala")
       }
       o1.save
 
-      val ods = {
-	import User._
-	u1(orders)
-      }
-      ods.size must beEqualTo(1)
+      import User._
+      u1(orders).findAll.size must beEqualTo(1)
+
+      import Order._
+      o1(user).get.key must beEqualTo(u1.key)
+
     }
 
     doLast {
@@ -117,3 +116,4 @@ class KindSpec extends Specification {
   }
 
 }
+

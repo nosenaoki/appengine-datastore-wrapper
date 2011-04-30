@@ -10,7 +10,7 @@ class EntityWrapper[A <: Kind](val entity:Entity, val kind:A) {
 
   private def datastore = DatastoreServiceFactory.getDatastoreService
 
-  type PropertyEntry[V] = (A#Property[V], V)
+  type PropertyEntry[V] = (kind.Property[V], V)
 
   def bind(props:PropertyEntry[_]*):this.type = {
     props.foreach {
@@ -23,26 +23,11 @@ class EntityWrapper[A <: Kind](val entity:Entity, val kind:A) {
     entity.setProperty(pdef.name, value)
   }
 
-  def apply[V](pdef:kind.Property[V]):V = {
-    val v = entity.getProperty(pdef.name)
-    if(v == null) throw new NoSuchPropertyException(kind.kindName, pdef.name)
-    else pdef.cast(v)
-  }
+  def apply[V](op:PartialFunction[this.type, V]):V = op(this)
 
-  def apply[K <: Kind](parent:kind.Parent[K]):parent.parentKind.Wrapper = 
-    parent.get(entity)
-  
-  def apply[K <: Kind](desc:kind.Descendant[K]):K#QueryWrapper = 
-    desc.get(entity)
+  def get[V](op:PartialFunction[this.type, V]):Option[V] = op.lift(this)
 
-  def get[V](pdef:kind.Property[V]):Option[V] = {
-    val v = entity.getProperty(pdef.name)
-    if(v == null) None
-    else Some(pdef.cast(v))
-  }
-
-
-  def save {
+  def save = {
     val ds = datastore
     val txn = ds.getCurrentTransaction(null)
 
@@ -54,7 +39,7 @@ class EntityWrapper[A <: Kind](val entity:Entity, val kind:A) {
     this
   }
 
-  def delete {
+  def delete = {
     val ds = datastore
     val txn = ds.getCurrentTransaction(null)
 
@@ -64,7 +49,6 @@ class EntityWrapper[A <: Kind](val entity:Entity, val kind:A) {
       ds.delete(txn, key)
     }
     this
-
   }
 
 }
