@@ -69,8 +69,7 @@ trait Kind {
     override def cast(value:Any):Int = value.asInstanceOf[Long].toInt
   }
 
-  class HasA[A <:Kind#Wrapper](kind:OtherKind[A]) 
-      extends Property[A] {
+  class HasA[A <:Kind#Wrapper](kind:OtherKind[A]) extends Property[A] {
 
     override def cast(value:Any):A = {
       val key = value.asInstanceOf[Key]
