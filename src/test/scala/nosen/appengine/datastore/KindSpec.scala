@@ -14,7 +14,7 @@ class KindSpec extends Specification {
     object lastName extends StringProperty
     object age extends IntProperty
 
-    object orders extends Order.DescendantOf[User]
+    object orders extends Order.DescendantOf(User)
   }
 
   object Item extends Kind {
@@ -26,7 +26,7 @@ class KindSpec extends Specification {
     type Order = Wrapper
     object itemName extends StringProperty
     object item extends HasA(Item)
-    object user extends User.AncestorOf[Order]
+    object user extends ChildOf(User)
   }
 
   "A kind" can {
@@ -47,7 +47,7 @@ class KindSpec extends Specification {
       u1.save
 
       val id = u1.key.getId
-      val u2 = User.findByKey(id).get
+      val u2 = User.findById(id).get
 
       u2(firstName) must beEqualTo("Naoki")
       u2(lastName) must beEqualTo("NOSE")
