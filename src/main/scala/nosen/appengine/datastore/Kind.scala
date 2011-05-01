@@ -19,12 +19,17 @@ trait Kind {
   type Wrapper = EntityWrapper[this.type]
   type Member[A] = PartialFunction[Wrapper, A]
 
-  case class Filter[A](prop:Kind.this.Property[A], value:A ,op:Query.FilterOperator) 
+  type OtherKind[A <: Kind#Wrapper] = {
+    def newInstance(entity:Entity):A
+  }
+
+  case class Filter[A](prop:Kind.this.Property[A], value:A ,op:Query.FilterOperator) {
+    def rawValue:Any = prop.toRawValue(value)
+  }
   case class Sort(prop:Kind.this.Property[_], direction:Query.SortDirection = Query.SortDirection.ASCENDING)
 
   trait Property[A] extends Member[A] {
     val name = this.getClass.getSimpleName.split("\\$").last
-    def cast(value:Any):A = value.asInstanceOf[A]
 
     def apply(w:Wrapper) = {
       val v = w.entity.getProperty(name)
@@ -32,7 +37,13 @@ trait Kind {
       else cast(v)
     }
 
+    def update(entity:Entity, value:A) {
+      entity.setProperty(name, toRawValue(value))
+    }
+
     def isDefinedAt(w:Wrapper) = w.entity.hasProperty(name)
+    def cast(value:Any):A = value.asInstanceOf[A]
+    def toRawValue(value:A):Any = value
 
     //Filters
     def ===(other:A):Kind.this.Filter[A] = Filter(this, other, Query.FilterOperator.EQUAL)
@@ -58,8 +69,19 @@ trait Kind {
     override def cast(value:Any):Int = value.asInstanceOf[Long].toInt
   }
 
-  class KeyProperty extends Property[Kind#Wrapper] {
-    
+  class HasA[A <:Kind#Wrapper](kind:OtherKind[A]) 
+      extends Property[A] {
+
+    override def cast(value:Any):A = {
+      val key = value.asInstanceOf[Key]
+      val entity = datastore.get(key)
+      if(entity == null)
+	kind.newInstance(new Entity(value.asInstanceOf[Key]))
+      else 
+	kind.newInstance(entity)
+    }
+
+    override def toRawValue(value:A):Any = value.key
   }
 
   case class KeyWrapper(key:Key) 
@@ -94,7 +116,7 @@ trait Kind {
     
     def query = {
       val q = ancestor.map(new Query(kindName, _))getOrElse(new Query(kindName))
-      for(f <- filter) q.addFilter(f.prop.name, f.op, f.value) 
+      for(f <- filter) q.addFilter(f.prop.name, f.op, f.rawValue) 
       for(s <- sort) q.addSort(s.prop.name, s.direction)
       q
     }
@@ -120,7 +142,7 @@ trait Kind {
     def isDefinedAt(descendant:A) = true
   }
 
-  def findByKey(key:this.KeyWrapper):Option[Wrapper] = 
+  def findByKey(key:KeyWrapper):Option[Wrapper] = 
     try {
       Some(newInstance(datastore.get(key.key)))
     } catch {
@@ -135,9 +157,9 @@ trait Kind {
 
   protected def newInstance(keyname:String):Wrapper = 
     newInstance(new Entity(kindName, keyname))
-  protected def newInstanceAsChild(parent:Key):Wrapper = 
+  def newInstanceAsChild(parent:Key):Wrapper = 
     newInstance(new Entity(kindName, parent))
-  private[datastore] def newInstance(entity:Entity):Wrapper = new Wrapper(entity, this)
+  def newInstance(entity:Entity):Wrapper = new Wrapper(entity, this)
 
 }
 

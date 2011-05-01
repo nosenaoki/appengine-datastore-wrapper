@@ -14,7 +14,7 @@ class EntityWrapper[A <: Kind](val entity:Entity, val kind:A) {
 
   def bind(props:PropertyEntry[_]*):this.type = {
     props.foreach {
-      case (pdef, value) => entity.setProperty(pdef.name, value)
+      case (pdef, value) => entity.setProperty(pdef.name, pdef.toRawValue(value))
     }
     this
   }

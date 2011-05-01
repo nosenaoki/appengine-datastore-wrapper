@@ -17,9 +17,15 @@ class KindSpec extends Specification {
     object orders extends Order.DescendantOf[User]
   }
 
+  object Item extends Kind {
+    object itemName extends StringProperty
+    object unitPrice extends IntProperty
+  }
+
   object Order extends Kind {
     type Order = Wrapper
     object itemName extends StringProperty
+    object item extends HasA(Item)
     object user extends User.AncestorOf[Order]
   }
 
@@ -107,6 +113,37 @@ class KindSpec extends Specification {
       import Order._
       o1(user).get.key must beEqualTo(u1.key)
 
+    }
+
+    "define HasA relation ship" in {
+      User.findAll.foreach(_.delete)
+      Order.findAll.foreach(_.delete)
+      Item.findAll.foreach(_.delete)
+
+      val u1 = {
+	import User._
+	create.bind (
+          firstName -> "Naoki",
+          lastName -> "NOSE",
+          age -> 34).save
+      }
+ 
+      val i1 = {
+	import Item._
+	create.bind(
+	  itemName -> "Proramming in Scala",
+	  unitPrice -> 2500).save
+      }
+
+      val o1 = {
+	import User.orders
+	import Order._
+	u1(orders).create.bind(item -> i1).save
+      }
+
+      val o2 = Order.findByKey(o1.key).get
+
+      o2(Order.item).key must beEqualTo(i1.key)
     }
 
     doLast {
