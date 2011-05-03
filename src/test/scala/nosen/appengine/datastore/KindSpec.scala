@@ -23,10 +23,9 @@ class KindSpec extends Specification {
   }
 
   object Order extends Kind {
-    type Order = Wrapper
     object itemName extends StringProperty
     object item extends HasA(Item)
-    object user extends ChildOf(User)
+    object user extends User.ParentOf(Order)
   }
 
   "A kind" can {

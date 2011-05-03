@@ -83,9 +83,9 @@ trait Kind {
     def isDefinedAt(wrapper:A) = true
   }
 
-  class ChildOf[A <: Kind#Wrapper](kind:OtherKind[A]) extends PartialFunction[Wrapper, Option[A]] {
-    def apply(descendant:Wrapper) = kind.findByKey(descendant.key.getParent)
-    def isDefinedAt(descendant:Wrapper) = true
+  class ParentOf[A <: Kind#Wrapper](kind:OtherKind[A]) extends PartialFunction[A, Option[Wrapper]] {
+    def apply(descendant:A) = findByKey(descendant.key.getParent)
+    def isDefinedAt(descendant:A) = true
   }
 
   case class QueryWrapper[A <: Kind#Wrapper](
