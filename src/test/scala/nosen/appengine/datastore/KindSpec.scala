@@ -89,8 +89,8 @@ class KindSpec extends Specification {
       Order.findAll.foreach(_.delete)
 
       val u1 = {
-	import User._
-	create.bind (
+        import User._
+        create.bind (
           firstName -> "Naoki",
           lastName -> "NOSE",
           age -> 34)
@@ -99,10 +99,10 @@ class KindSpec extends Specification {
       u1.save
 
       val o1 = {
-	import Order._
-	import User.orders
-	u1(orders).create
-	  .bind(itemName -> "Programming in scala")
+        import Order._
+        import User.orders
+        u1(orders).create
+          .bind(itemName -> "Programming in scala")
       }
       o1.save
 
@@ -120,24 +120,24 @@ class KindSpec extends Specification {
       Item.findAll.foreach(_.delete)
 
       val u1 = {
-	import User._
-	create.bind (
+        import User._
+        create.bind (
           firstName -> "Naoki",
           lastName -> "NOSE",
           age -> 34).save
       }
  
       val i1 = {
-	import Item._
-	create.bind(
-	  itemName -> "Proramming in Scala",
-	  unitPrice -> 2500).save
+        import Item._
+        create.bind(
+          itemName -> "Proramming in Scala",
+          unitPrice -> 2500).save
       }
 
       val o1 = {
-	import User.orders
-	import Order._
-	u1(orders).create.bind(item -> i1).save
+        import User.orders
+        import Order._
+        u1(orders).create.bind(item -> i1).save
       }
 
       val o2 = Order.findByKey(o1.key).get
