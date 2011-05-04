@@ -9,7 +9,12 @@ import datastore.EntityNotFoundException
 import datastore.DatastoreServiceFactory
 import datastore.Query
 import datastore.FetchOptions
+import datastore.GeoPt
+import datastore.IMHandle
+import com.google.appengine.api.users.User
+import com.google.appengine.api.blobstore.BlobKey
 import collection.JavaConversions._
+import java.util.Date
 
 trait Kind {
   val kindName :String = this.getClass.getSimpleName.split("\\$").last
@@ -62,8 +67,96 @@ trait Kind {
 
   class StringProperty extends Property[String]
 
+
+  class BooleanProperty extends Property[Boolean]
+
+  class ShortBlobProperty extends Property[Seq[Byte]] {
+    import com.google.appengine.api.datastore.ShortBlob
+    override def cast(value:Any):Seq[Byte] = 
+      value.asInstanceOf[ShortBlob].getBytes
+
+    override def toRawValue(value:Seq[Byte]):Any = new ShortBlob(value.toArray)
+  }
+
+
+  class BlobProperty extends Property[Seq[Byte]] {
+    import com.google.appengine.api.datastore.Blob
+    override def cast(value:Any):Seq[Byte] = 
+      value.asInstanceOf[Blob].getBytes
+
+    override def toRawValue(value:Seq[Byte]):Any = new Blob(value.toArray)
+  }
+
+  class CategoryProperty extends Property[String] {
+    import com.google.appengine.api.datastore.Category
+    override def cast(value:Any):String = 
+      value.asInstanceOf[Category].getCategory
+    override def toRawValue(value:String):Any = new Category(value)
+  }
+
+  class DateProperty extends Property[Date]
+
+  class EmailProperty extends Property[String] {
+    import com.google.appengine.api.datastore.Email
+    override def cast(value:Any):String = 
+      value.asInstanceOf[Email].getEmail
+    override def toRawValue(value:String):Any = new Email(value)
+  }
+
+  class FloatProperty extends Property[Float] {
+    override def cast(value:Any):Float = 
+      value.asInstanceOf[Double].toFloat
+  }
+
+  class DoubleProperty extends Property[Double]
+
+  class GeoPtProperty extends Property[GeoPt] 
+
+  class UserProperty extends Property[User]
+
+  class BlobKeyProperty extends Property[BlobKey]
+
   class IntProperty extends Property[Int] {
     override def cast(value:Any):Int = value.asInstanceOf[Long].toInt
+  }
+
+  class LongProperty extends Property[Long]
+
+  class LinkProperty extends Property[String] {
+    import com.google.appengine.api.datastore.Link
+    override def cast(value:Any):String = 
+      value.asInstanceOf[Link].getValue
+    override def toRawValue(value:String):Any = new Link(value)
+  }
+
+  class IMHandleProperty extends Property[IMHandle]
+
+  class PostalAddressProperty extends Property[String] {
+    import com.google.appengine.api.datastore.PostalAddress
+    override def cast(value:Any):String = 
+      value.asInstanceOf[PostalAddress].getAddress
+    override def toRawValue(value:String):Any = new PostalAddress(value)
+  }
+
+  class RatingProperty extends Property[Int] {
+    import com.google.appengine.api.datastore.Rating
+    override def cast(value:Any):Int =
+      value.asInstanceOf[Rating].getRating
+    override def toRawValue(value:Int):Any = new Rating(value)
+  }
+
+  class PhoneNumberProperty extends Property[String] {
+    import com.google.appengine.api.datastore.PhoneNumber
+    override def cast(value:Any):String = 
+      value.asInstanceOf[PhoneNumber].getNumber
+    override def toRawValue(value:String):Any = new PhoneNumber(value)
+  }
+
+  class TextProperty extends Property[String] {
+    import com.google.appengine.api.datastore.Text
+    override def cast(value:Any):String = 
+      value.asInstanceOf[Text].getValue
+    override def toRawValue(value:String):Any = new Text(value)
   }
 
   class HasA[A <:Kind#Wrapper](kind:OtherKind[A]) extends Property[A] {
@@ -106,7 +199,7 @@ trait Kind {
       offsetOpt.foreach(fo.offset)
       fo
     } 
-    
+
     def query = {
       val q = ancestor.map(new Query(kindName, _))getOrElse(new Query(kindName))
       for(f <- filter) q.addFilter(f.prop.name, f.op, f.rawValue) 
