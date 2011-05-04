@@ -9,7 +9,6 @@ class KindSpec extends Specification {
     new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
 
   object User extends Kind {
-    type User = Wrapper
     object firstName extends StringProperty
     object lastName extends StringProperty
     object age extends IntProperty
@@ -142,7 +141,10 @@ class KindSpec extends Specification {
 
       val o2 = Order.findByKey(o1.key).get
 
-      o2(Order.item).key must beEqualTo(i1.key)
+      val i2 = o2(Order.item)
+      i2.key must beEqualTo(i1.key)
+      i2(Item.unitPrice) must beEqualTo(2500)
+      
     }
 
     doLast {
