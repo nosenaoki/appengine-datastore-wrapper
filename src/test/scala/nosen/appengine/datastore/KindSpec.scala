@@ -8,7 +8,10 @@ class KindSpec extends Specification {
   val helper =
     new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
 
+  //define user kind
   object User extends Kind {
+
+    //define Properties
     object firstName extends StringProperty
     object lastName extends StringProperty
     object age extends IntProperty
@@ -22,8 +25,9 @@ class KindSpec extends Specification {
   }
 
   object Order extends Kind {
-    object itemName extends StringProperty
+    //define has-a relationship
     object item extends HasA(Item)
+    //define parent relationship
     object user extends User.ParentOf(Order)
   }
 
@@ -33,6 +37,8 @@ class KindSpec extends Specification {
     }
 
     "create ,save ,get, remove an entity" in {
+
+      //create the entity of kind User
       val u1 = {
         import User._
         create
@@ -104,9 +110,7 @@ class KindSpec extends Specification {
       val o1:Order.Wrapper = {
         import Order._
         import User.orders
-        u1(orders).create
-          .bind(itemName -> "Programming in scala")
-          .save
+        u1(orders).create.save
       }
 
       import User._

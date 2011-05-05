@@ -4,6 +4,7 @@ import com.google.appengine.api._
 import datastore.Entity
 import datastore.DatastoreServiceFactory
 
+
 class EntityWrapper[+A <: Kind](val entity:Entity, val kind:A) { 
 
   def key = entity.getKey

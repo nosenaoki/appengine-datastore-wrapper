@@ -72,13 +72,18 @@ trait Kind extends Properties {
     }
 
     def where(f:Kind.this.Filter[_]*) = copy(filter = (filter ++ f))
+
     def orderBy(s:Kind.this.Sort*) = copy(sort = (sort ++ s)) 
+
     def limit(i:Int) = copy(limitOpt = Some(i))
+
     def offset(i:Int) = copy(offsetOpt = Some(i))
   }
 
   def findById(id:Long):Option[Wrapper] = findByKey(KeyFactory.createKey(kindName, id))
+
   def findByName(name:String):Option[Wrapper] = findByKey(KeyFactory.createKey(kindName, name))
+
   def findByKey(key:Key):Option[Wrapper] = {
     if(key.getKind != kindName) 
       throw new IllegalArgumentException("A kind of key must be same as " + 
@@ -98,8 +103,10 @@ trait Kind extends Properties {
 
   def newInstance(keyname:String):Wrapper = 
     newInstance(new Entity(kindName, keyname))
+
   def newInstanceAsChild(parent:Key):Wrapper = 
     newInstance(new Entity(kindName, parent))
+
   def newInstance(entity:Entity):Wrapper = new Wrapper(entity, this)
 
 }
