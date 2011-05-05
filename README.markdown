@@ -1,4 +1,4 @@
-The thin wrapper for Google AppEngine Datastore/Java, written in Scala.
+The thin wrapper for Google AppEngine Datastore, written in Scala.
 =========================================================================
 
 
