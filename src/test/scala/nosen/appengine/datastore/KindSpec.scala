@@ -33,57 +33,62 @@ class KindSpec extends Specification {
     }
 
     "create ,save ,get, remove an entity" in {
-      val u1 = User.create
+      val u1 = {
+        import User._
+        create
+          .bind(
+            firstName -> "Naoki",
+            lastName -> "NOSE",
+            age -> 34)
+          .save
+      }
 
-      import User._
+      val u2 = User.findById(u1.key.getId).get
 
-      u1.bind(
-        firstName -> "Naoki",
-        lastName -> "NOSE",
-        age -> 34)
-
-      u1.save
-
-      val id = u1.key.getId
-      val u2 = User.findById(id).get
-
-      u2(firstName) must beEqualTo("Naoki")
-      u2(lastName) must beEqualTo("NOSE")
-      u2(age) must beEqualTo(34)
-
+      {
+        import User._
+        u2(firstName) must beEqualTo("Naoki")
+        u2(lastName) must beEqualTo("NOSE")
+        u2(age) must beEqualTo(34)
+      }
     }
 
     "filter,sort resulting collection" in {
       User.findAll.map(_.delete)
-      val u1 = User.create
 
-      import User._
+      val u1 = {
+        import User._
+        create
+          .bind(
+            firstName -> "Naoki",
+            lastName -> "NOSE",
+            age -> 34)
+          .save
+      }
 
-      u1.bind(
-        firstName -> "Naoki",
-        lastName -> "NOSE",
-        age -> 34)
-      u1.save
+      val u2 = {
+        import User._
+        create
+          .bind(
+            firstName -> "Naoki",
+            lastName -> "NOSE",
+            age -> 35)
+          .save
+      }
 
-      val u2 = User.create
+      {
+        import User._
+        findAll.where(age === 34).size must beEqualTo(1)
+        findAll.where(age === 34).head(firstName) must beEqualTo("Naoki")
 
-      u2.bind(
-        firstName -> "Naoki",
-        lastName -> "NOSE",
-        age -> 35)
-     
-      u2.save
-
-      findAll.where(age === 34).size must beEqualTo(1)
-      findAll.where(age === 34).head(firstName) must beEqualTo("Naoki")
-
-      val res = findAll where (age > 33) orderBy (age desc, firstName)
-      res.size must beEqualTo(2)
-      res.head(age) must beEqualTo(35)
+        val res = findAll where (age > 33) orderBy (age desc, firstName)
+        res.size must beEqualTo(2)
+        res.head(age) must beEqualTo(35)
+      }
 
     }
 
-    "define relation ship between child and parent " in {
+    "define relationship between child and parent " in {
       User.findAll.foreach(_.delete)
       Order.findAll.foreach(_.delete)
 
@@ -93,17 +98,16 @@ class KindSpec extends Specification {
           firstName -> "Naoki",
           lastName -> "NOSE",
           age -> 34)
+        .save
       }
 
-      u1.save
-
-      val o1 = {
+      val o1:Order.Wrapper = {
         import Order._
         import User.orders
         u1(orders).create
           .bind(itemName -> "Programming in scala")
+          .save
       }
-      o1.save
 
       import User._
       u1(orders).findAll.size must beEqualTo(1)
@@ -133,7 +137,7 @@ class KindSpec extends Specification {
           unitPrice -> 2500).save
       }
 
-      val o1 = {
+      val o1:Order.Wrapper = {
         import User.orders
         import Order._
         u1(orders).create.bind(item -> i1).save
