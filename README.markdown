@@ -5,9 +5,10 @@ The thin wrapper for Google AppEngine Datastore/Java, written in Scala.
 ## Design Goal
 
 * The goal of this library is to provide API to
-** get or set properties in type safe way.
-** define names and types of properties which a kind can have.
-** define parent/child relationship between kinds.
+
+  * get or set properties in type safe way.
+  * define names and types of properties which a kind can have.
+  * define parent/child relationship between kinds.
 
 ## Example
 
