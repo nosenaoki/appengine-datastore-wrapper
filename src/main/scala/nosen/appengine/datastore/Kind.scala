@@ -31,7 +31,7 @@ trait Kind extends Properties {
   case class Sort(prop:Kind.this.Property[_], direction:Query.SortDirection = Query.SortDirection.ASCENDING)
 
   class Descendant[A <:Kind#Wrapper](wrapper:A) {
-    def findAll:QueryWrapper[Wrapper] = childrenOf(wrapper.key)
+    def findAll:QueryWrapper = childrenOf(wrapper.key)
     def create:Wrapper = newInstanceAsChild(wrapper.key)
   }
 
@@ -45,14 +45,14 @@ trait Kind extends Properties {
     def isDefinedAt(descendant:A) = true
   }
 
-  case class QueryWrapper[A <: Kind#Wrapper](
-    kind:OtherKind[A], ancestor:Option[Key] = None,
+  case class QueryWrapper (
+    ancestor:Option[Key] = None,
     filter:Seq[Filter[_]] = Seq.empty, sort:Seq[Sort] = Seq.empty,
-    limitOpt:Option[Int] = None, offsetOpt:Option[Int] = None) extends Iterable[A] {
+    limitOpt:Option[Int] = None, offsetOpt:Option[Int] = None) extends Iterable[Wrapper] {
 
-    def iterator:Iterator[A] = {
+    def iterator:Iterator[Wrapper] = {
       val ds = datastore 
-      ds.prepare(query).asIterator(fetchOptions).map(kind.newInstance)
+      ds.prepare(query).asIterator(fetchOptions).map(newInstance)
     }
 
     def fetchOptions = {
@@ -90,9 +90,9 @@ trait Kind extends Properties {
     }
   }
 
-  val findAll:QueryWrapper[Wrapper] = QueryWrapper(kind = this)
+  val findAll:QueryWrapper = QueryWrapper()
 
-  def childrenOf(ancestor:Key):QueryWrapper[Wrapper] = QueryWrapper(kind= this, ancestor = Some(ancestor))
+  def childrenOf(ancestor:Key):QueryWrapper = QueryWrapper(ancestor = Some(ancestor))
 
   def create:Wrapper = newInstance(new Entity(kindName))
 
