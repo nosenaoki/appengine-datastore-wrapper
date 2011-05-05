@@ -11,6 +11,7 @@ The thin wrapper for Google AppEngine Datastore, written in Scala.
   * define parent/child relationship between kinds.
 
 ## Example
+    import nosen.appengine.datastore._
 
     //define user kind
     object User extends Kind {
